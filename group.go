@@ -23,37 +23,37 @@ func (g *group) addRoute(method string, comp string, handler HandlerFunc) {
 	g.kid.router.addRoute(method, pattern, handler)
 }
 
-// HEAD adds a head router.
-func (g *group) HEAD(pattern string, handler HandlerFunc) {
+// Head adds a head router.
+func (g *group) Head(pattern string, handler HandlerFunc) {
 	g.addRoute(http.MethodHead, pattern, handler)
 }
 
-// GET add a get router.
-func (g *group) GET(pattern string, handler HandlerFunc) {
+// Get adds a get router.
+func (g *group) Get(pattern string, handler HandlerFunc) {
 	g.addRoute(http.MethodGet, pattern, handler)
 }
 
-// DELETE add a delete router.
-func (g *group) DELETE(pattern string, handler HandlerFunc) {
+// Delete adds a delete router.
+func (g *group) Delete(pattern string, handler HandlerFunc) {
 	g.addRoute(http.MethodDelete, pattern, handler)
 }
 
-// POST add a post router.
-func (g *group) POST(pattern string, handler HandlerFunc) {
+// Post adds a post router.
+func (g *group) Post(pattern string, handler HandlerFunc) {
 	g.addRoute(http.MethodPost, pattern, handler)
 }
 
-// PUT add a put router.
-func (g *group) PUT(pattern string, handler HandlerFunc) {
+// Put adds a put router.
+func (g *group) Put(pattern string, handler HandlerFunc) {
 	g.addRoute(http.MethodPut, pattern, handler)
 }
 
-// PATCH add a patch router.
-func (g *group) PATCH(pattern string, handler HandlerFunc) {
+// Patch adds a patch router.
+func (g *group) Patch(pattern string, handler HandlerFunc) {
 	g.addRoute(http.MethodPatch, pattern, handler)
 }
 
-// Use add a middleware.
+// Use adds a middleware.
 func (g *group) Use(middlewares ...HandlerFunc) {
 	g.middlewares = append(g.middlewares, middlewares...)
 }

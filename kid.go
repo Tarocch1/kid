@@ -4,21 +4,29 @@ import (
 	"net/http"
 )
 
+// HandlerFunc defines a function to serve HTTP requests.
 type HandlerFunc func(*Ctx) error
 
+// Kid application.
 type Kid struct {
 	*group
 	router *router
 	groups []*group
-	config *Config
+	config Config
 }
 
 // New creates a kid app.
-func New(config *Config) *Kid {
-	kid := &Kid{router: newRouter()}
+func New(config ...Config) *Kid {
+	kid := &Kid{
+		router: newRouter(),
+		config: Config{},
+	}
 	kid.group = &group{kid: kid}
 	kid.groups = []*group{kid.group}
-	kid.config = config
+	if len(config) > 0 {
+		kid.config = config[0]
+	}
+	setDefaultConfig(kid)
 	return kid
 }
 

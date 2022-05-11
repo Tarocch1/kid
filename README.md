@@ -13,10 +13,14 @@ go get -u github.com/Tarocch1/kid
 ```go
 package main
 
-import "github.com/Tarocch1/kid"
+import (
+    "github.com/Tarocch1/kid"
+    "github.com/Tarocch1/kid/middlewares/recovery"
+)
 
 func main() {
-    k := kid.New(&kid.Config{})
+    k := kid.New()
+    k.Use(recovery.New())
 
     k.Get("/", func(c *kid.Ctx) error {
         return c.String("Hello, World 👋!")

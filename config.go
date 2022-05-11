@@ -6,3 +6,9 @@ type Config struct {
 	// Default: DefaultErrorHandler
 	ErrorHandler ErrorHandlerFunc
 }
+
+func setDefaultConfig(k *Kid) {
+	if k.config.ErrorHandler == nil {
+		k.config.ErrorHandler = DefaultErrorHandler
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"net/http"
 )
 
+// ErrorHandlerFunc defines a function to process return errors or panic errors from handlers.
 type ErrorHandlerFunc func(*Ctx, error) error
 
 // DefaultErrorHandler that process return errors or panic errors from handlers.
