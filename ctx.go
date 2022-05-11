@@ -46,6 +46,7 @@ func newCtx(w http.ResponseWriter, r *http.Request) *Ctx {
 	return context
 }
 
+// Next starts the next middleware.
 func (c *Ctx) Next() error {
 	c.index++
 	if c.index < len(c.handlers) {
@@ -55,72 +56,89 @@ func (c *Ctx) Next() error {
 	return nil
 }
 
+// Set sets some value to ctx.
 func (c *Ctx) Set(key string, value interface{}) {
 	c.store[key] = value
 }
 
+// Get gets some value from ctx.
 func (c *Ctx) Get(key string) interface{} {
 	return c.store[key]
 }
 
+// Method returns request's method.
 func (c *Ctx) Method() string {
 	return c.request.Method
 }
 
+// Url returns request's URL.
 func (c *Ctx) Url() *url.URL {
 	return c.request.URL
 }
 
+// Params gets all router path params.
 func (c *Ctx) Params() map[string]string {
 	return c.params
 }
 
+// GetParam gets a router path param value by key.
 func (c *Ctx) GetParam(key string, defaultValue ...string) string {
 	return getValue(c.params[key], defaultValue...)
 }
 
+// Query gets request's Query.
 func (c *Ctx) Query() url.Values {
 	return c.request.URL.Query()
 }
 
+// GetQuery gets a query value by key.
 func (c *Ctx) GetQuery(key string, defaultValue ...string) string {
 	return getValue(c.request.URL.Query().Get(key), defaultValue...)
 }
 
+// Header gets request's Header.
 func (c *Ctx) Header() http.Header {
 	return c.request.Header
 }
 
+// GetHeader gets a header's first value  by key.
 func (c *Ctx) GetHeader(key string, defaultValue ...string) string {
 	return getValue(c.request.Header.Get(key), defaultValue...)
 }
 
+// GetHeaderValues gets a header by key.
 func (c *Ctx) GetHeaderValues(key string, defaultValue ...[]string) []string {
 	return getValue(c.request.Header.Values(key), defaultValue...)
 }
 
+// Cookies gets request's cookies.
 func (c *Ctx) Cookies() []*http.Cookie {
 	return c.request.Cookies()
 }
 
+// GetCookie gets a cookie by name.
 func (c *Ctx) GetCookie(name string) *http.Cookie {
 	cookie, _ := c.request.Cookie(name)
 	return cookie
 }
 
+// FormValue gets a form value by key.
 func (c *Ctx) FormValue(key string, defaultValue ...string) string {
 	return getValue(c.request.FormValue(key), defaultValue...)
 }
 
+// FormFile gets a form file by key.
 func (c *Ctx) FormFile(key string) (*multipart.FileHeader, error) {
 	_, fh, err := c.request.FormFile(key)
 	return fh, err
 }
 
+// Body gets request's raw body.
 func (c *Ctx) Body() []byte {
 	return c.rawBody
 }
 
+// BodyParser parsers body to any struct.
 func (c *Ctx) BodyParser(out interface{}) error {
 	ctype := c.GetHeader("Content-Type")
 
@@ -150,21 +168,25 @@ func (c *Ctx) BodyParser(out interface{}) error {
 	return NewError(http.StatusUnprocessableEntity, "422 Unprocessable Entity")
 }
 
+// SetHeader sets a header.
 func (c *Ctx) SetHeader(key string, value string) *Ctx {
 	c.writer.Header().Set(key, value)
 	return c
 }
 
+// AddHeader adds a header value.
 func (c *Ctx) AddHeader(key string, value string) *Ctx {
 	c.writer.Header().Add(key, value)
 	return c
 }
 
+// SetCookie sets a cookie.
 func (c *Ctx) SetCookie(cookie *http.Cookie) *Ctx {
 	http.SetCookie(c.writer, cookie)
 	return c
 }
 
+// ClearCookie clears a cookie.
 func (c *Ctx) ClearCookie(name string) *Ctx {
 	http.SetCookie(c.writer, &http.Cookie{
 		Name:     name,
@@ -176,22 +198,26 @@ func (c *Ctx) ClearCookie(name string) *Ctx {
 	return c
 }
 
+// Status sets response's status.
 func (c *Ctx) Status(status int) *Ctx {
 	c.status = status
 	return c
 }
 
+// SendStatus sets response's status and send.
 func (c *Ctx) SendStatus(status int) error {
 	return c.Status(status).String(strconv.Itoa(status))
 }
 
-func (c *Ctx) Data(data []byte) error {
+// Stream sends binary stream.
+func (c *Ctx) Stream(data []byte) error {
 	c.SetHeader("Content-Type", "application/octet-stream")
 	c.writer.WriteHeader(c.status)
 	_, err := c.writer.Write(data)
 	return err
 }
 
+// String sends string.
 func (c *Ctx) String(format string, values ...interface{}) error {
 	c.SetHeader("Content-Type", "text/plain")
 	c.writer.WriteHeader(c.status)
@@ -199,14 +225,16 @@ func (c *Ctx) String(format string, values ...interface{}) error {
 	return err
 }
 
-func (c *Ctx) JSON(data interface{}) error {
+// Json sends json.
+func (c *Ctx) Json(data interface{}) error {
 	c.SetHeader("Content-Type", "application/json")
 	c.writer.WriteHeader(c.status)
 	encoder := json.NewEncoder(c.writer)
 	return encoder.Encode(data)
 }
 
-func (c *Ctx) HTML(code int, html string) error {
+// Html sends html.
+func (c *Ctx) Html(html string) error {
 	c.SetHeader("Content-Type", "text/html")
 	c.writer.WriteHeader(c.status)
 	_, err := c.writer.Write([]byte(html))

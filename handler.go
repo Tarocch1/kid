@@ -12,7 +12,7 @@ type handler struct {
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	c := newCtx(w, req)
-	handlerFunc, params := h.kid.router.GetRoute(c.Method(), c.Url().Path)
+	handlerFunc, params := h.kid.router.getRoute(c.Method(), c.Url().Path)
 	c.params = params
 
 	middlewares := make([]HandlerFunc, 0)
@@ -39,7 +39,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		if h.kid.config.ErrorHandler != nil {
 			h.kid.config.ErrorHandler(c, err)
 		} else {
-			defaultErrorHandler(c, err)
+			DefaultErrorHandler(c, err)
 		}
 	}
 }

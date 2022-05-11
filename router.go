@@ -67,7 +67,7 @@ func newRouter() *router {
 	return &router{trees: make(map[string]*routerTree)}
 }
 
-func (r *router) AddRoute(method string, pattern string, handler HandlerFunc) {
+func (r *router) addRoute(method string, pattern string, handler HandlerFunc) {
 	parts := toParts(pattern)
 	if _, ok := r.trees[method]; !ok {
 		r.trees[method] = &routerTree{root: &routerTreeNode{}}
@@ -75,7 +75,7 @@ func (r *router) AddRoute(method string, pattern string, handler HandlerFunc) {
 	r.trees[method].insert(parts, handler)
 }
 
-func (r *router) GetRoute(method string, path string) (HandlerFunc, map[string]string) {
+func (r *router) getRoute(method string, path string) (HandlerFunc, map[string]string) {
 	pathParts := toParts(path)
 	tree, ok := r.trees[method]
 	if !ok {

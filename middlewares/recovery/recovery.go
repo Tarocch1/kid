@@ -7,6 +7,8 @@ import (
 )
 
 type Config struct {
+	// Skip the middleware when this func return true.
+	//
 	// Optional. Default: nil
 	Skip func(*kid.Ctx) bool
 }
