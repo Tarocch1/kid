@@ -209,6 +209,7 @@ func (c *Ctx) SendStatus(status int) error {
 	return c.Status(status).String(strconv.Itoa(status))
 }
 
+// Redirect redirects request to target with status.
 func (c *Ctx) Redirect(target string, status ...int) error {
 	_status := http.StatusTemporaryRedirect
 	if len(status) > 0 {
