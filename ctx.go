@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -249,4 +250,40 @@ func (c *Ctx) Html(html string) error {
 	c.writer.WriteHeader(c.status)
 	_, err := c.writer.Write([]byte(html))
 	return err
+}
+
+// SendFile reads file from fs at path and sends it.
+func (c *Ctx) SendFile(path string, download bool, fs ...http.FileSystem) error {
+	var _fs http.FileSystem
+	if len(fs) > 0 {
+		_fs = fs[0]
+	} else {
+		dir, err := os.Getwd()
+		if err != nil {
+			return nil
+		}
+		_fs = http.Dir(dir)
+	}
+
+	file, err := _fs.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	stat, err := file.Stat()
+	if err != nil {
+		return err
+	}
+
+	if stat.IsDir() {
+		return NewError(http.StatusBadRequest, "400 Bad Request: can not serve dir")
+	}
+
+	if download {
+		c.SetHeader("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", stat.Name()))
+	}
+
+	http.ServeContent(c.writer, c.request, stat.Name(), stat.ModTime(), file)
+	return nil
 }
