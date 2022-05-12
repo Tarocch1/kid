@@ -36,10 +36,6 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	c.handlers = handlers
 	err := c.Next()
 	if err != nil {
-		if h.kid.config.ErrorHandler != nil {
-			h.kid.config.ErrorHandler(c, err)
-		} else {
-			DefaultErrorHandler(c, err)
-		}
+		h.kid.config.ErrorHandler(c, err)
 	}
 }
