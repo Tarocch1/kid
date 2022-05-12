@@ -8,7 +8,7 @@ import (
 )
 
 var DefaultFormatter = func(c *kid.Ctx) string {
-	return fmt.Sprintf("%s %s", c.Method(), c.Url().RequestURI())
+	return fmt.Sprintf("%s %s -Header %v", c.Method(), c.Url().RequestURI(), c.Header())
 }
 
 type Config struct {
@@ -17,10 +17,10 @@ type Config struct {
 	// Optional. Default: nil
 	Skip func(*kid.Ctx) bool
 
-	// Use log.Println rather than fmt.Println.
+	// Use fmt.Println rather than log.Println.
 	//
 	// Optional. Default: false
-	UseLog bool
+	UseFmt bool
 
 	// Formatter formats ctx to log string.
 	//
@@ -30,7 +30,7 @@ type Config struct {
 
 var ConfigDefault = Config{
 	Skip:      nil,
-	UseLog:    false,
+	UseFmt:    false,
 	Formatter: DefaultFormatter,
 }
 
@@ -56,10 +56,10 @@ func New(config ...Config) kid.HandlerFunc {
 		}
 
 		message := cfg.Formatter(c)
-		if cfg.UseLog {
-			log.Println(message)
-		} else {
+		if cfg.UseFmt {
 			fmt.Println(message)
+		} else {
+			log.Println(message)
 		}
 
 		return c.Next()
