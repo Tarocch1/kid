@@ -114,7 +114,7 @@ func (r *router) getRoute(method string, path string) (HandlerFunc, map[string]s
 		}
 		return n.handler, params, ns
 	}
-	return nil, nil, nil
+	return nil, nil, ns
 }
 
 func (r *router) addMiddleware(pattern string, middlewares ...HandlerFunc) {
