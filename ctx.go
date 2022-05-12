@@ -277,7 +277,7 @@ func (c *Ctx) SendFile(path string, download bool, fs ...http.FileSystem) error 
 	}
 
 	if stat.IsDir() {
-		return NewError(http.StatusBadRequest, "400 Bad Request: can not serve dir")
+		return NewError(http.StatusBadRequest, "400 Bad Request: Can not serve dir")
 	}
 
 	if download {
