@@ -209,6 +209,15 @@ func (c *Ctx) SendStatus(status int) error {
 	return c.Status(status).String(strconv.Itoa(status))
 }
 
+func (c *Ctx) Redirect(target string, status ...int) error {
+	_status := http.StatusTemporaryRedirect
+	if len(status) > 0 {
+		_status = status[0]
+	}
+	c.SetHeader("Location", target)
+	return c.SendStatus(_status)
+}
+
 // Stream sends binary stream.
 func (c *Ctx) Stream(data []byte) error {
 	c.SetHeader("Content-Type", "application/octet-stream; charset=utf-8")
