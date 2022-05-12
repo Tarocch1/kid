@@ -11,7 +11,6 @@ type HandlerFunc func(*Ctx) error
 type Kid struct {
 	*group
 	router *router
-	groups []*group
 	config Config
 }
 
@@ -22,7 +21,6 @@ func New(config ...Config) *Kid {
 		config: Config{},
 	}
 	kid.group = &group{kid: kid}
-	kid.groups = []*group{kid.group}
 	if len(config) > 0 {
 		kid.config = config[0]
 	}

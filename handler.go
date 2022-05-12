@@ -3,7 +3,6 @@ package kid
 import (
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 type handler struct {
@@ -12,15 +11,9 @@ type handler struct {
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	c := newCtx(w, req)
-	handlerFunc, params := h.kid.router.getRoute(c.Method(), c.Url().Path)
+	handlerFunc, params, _ := h.kid.router.getRoute(c.Method(), c.Url().Path)
 	c.params = params
-
-	middlewares := make([]HandlerFunc, 0)
-	for _, group := range h.kid.groups {
-		if strings.HasPrefix(c.Url().Path, group.prefix) {
-			middlewares = append(middlewares, group.middlewares...)
-		}
-	}
+	middlewares := h.kid.router.getMiddlewares(c.Url().Path)
 
 	handlers := append(middlewares, func(c *Ctx) error {
 		if handlerFunc != nil {

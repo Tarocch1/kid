@@ -3,9 +3,8 @@ package kid
 import "net/http"
 
 type group struct {
-	prefix      string
-	middlewares []HandlerFunc
-	kid         *Kid
+	prefix string
+	kid    *Kid
 }
 
 // Group creates a router group.
@@ -14,7 +13,6 @@ func (g *group) Group(prefix string) *group {
 		prefix: g.prefix + prefix,
 		kid:    g.kid,
 	}
-	g.kid.groups = append(g.kid.groups, group)
 	return group
 }
 
@@ -55,5 +53,5 @@ func (g *group) Patch(pattern string, handler HandlerFunc) {
 
 // Use adds a middleware.
 func (g *group) Use(middlewares ...HandlerFunc) {
-	g.middlewares = append(g.middlewares, middlewares...)
+	g.kid.router.addMiddleware(g.prefix, middlewares...)
 }

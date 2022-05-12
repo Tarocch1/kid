@@ -1,14 +1,20 @@
 package kid
 
-import "strings"
+import (
+	"net/http"
+	"strings"
+)
+
+const middlewaresMethod = "middlewares"
 
 type routerTreeNode struct {
-	pattern    string
-	part       string
-	children   []*routerTreeNode
-	isPartWild bool
-	isFullWild bool
-	handler    HandlerFunc
+	pattern     string
+	part        string
+	children    []*routerTreeNode
+	isPartWild  bool
+	isFullWild  bool
+	middlewares []HandlerFunc
+	handler     HandlerFunc
 }
 
 func (n *routerTreeNode) matchChild(part string) *routerTreeNode {
@@ -24,7 +30,7 @@ type routerTree struct {
 	root *routerTreeNode
 }
 
-func (t *routerTree) insert(parts []string, handler HandlerFunc) {
+func (t *routerTree) insert(parts []string, middleware bool, handler ...HandlerFunc) {
 	cur := t.root
 	pattern := ""
 	for _, part := range parts {
@@ -37,26 +43,32 @@ func (t *routerTree) insert(parts []string, handler HandlerFunc) {
 				isPartWild: part[0] == ':',
 				isFullWild: part[0] == '*',
 			}
+			cur.children = append(cur.children, next)
 		}
-		cur.children = append(cur.children, next)
 		cur = next
 	}
-	cur.handler = handler
+	if middleware {
+		cur.middlewares = append(cur.middlewares, handler...)
+	} else {
+		cur.handler = handler[0]
+	}
 }
 
-func (t *routerTree) search(parts []string) *routerTreeNode {
+func (t *routerTree) search(parts []string) (*routerTreeNode, []*routerTreeNode) {
+	nodes := []*routerTreeNode{t.root}
 	cur := t.root
 	for _, part := range parts {
 		next := cur.matchChild(part)
 		if next == nil {
-			return nil
+			return nil, nodes
 		}
+		nodes = append(nodes, next)
 		if next.isFullWild {
-			return next
+			return next, nodes
 		}
 		cur = next
 	}
-	return cur
+	return cur, nodes
 }
 
 type router struct {
@@ -64,25 +76,30 @@ type router struct {
 }
 
 func newRouter() *router {
-	return &router{trees: make(map[string]*routerTree)}
+	return &router{trees: map[string]*routerTree{
+		http.MethodHead:   {root: &routerTreeNode{}},
+		http.MethodGet:    {root: &routerTreeNode{}},
+		http.MethodDelete: {root: &routerTreeNode{}},
+		http.MethodPost:   {root: &routerTreeNode{}},
+		http.MethodPut:    {root: &routerTreeNode{}},
+		http.MethodPatch:  {root: &routerTreeNode{}},
+		middlewaresMethod: {root: &routerTreeNode{}},
+	}}
 }
 
 func (r *router) addRoute(method string, pattern string, handler HandlerFunc) {
 	parts := toParts(pattern)
-	if _, ok := r.trees[method]; !ok {
-		r.trees[method] = &routerTree{root: &routerTreeNode{}}
-	}
-	r.trees[method].insert(parts, handler)
+	r.trees[method].insert(parts, false, handler)
 }
 
-func (r *router) getRoute(method string, path string) (HandlerFunc, map[string]string) {
+func (r *router) getRoute(method string, path string) (HandlerFunc, map[string]string, []*routerTreeNode) {
 	pathParts := toParts(path)
 	tree, ok := r.trees[method]
 	if !ok {
-		return nil, nil
+		return nil, nil, nil
 	}
 
-	n := tree.search(pathParts)
+	n, ns := tree.search(pathParts)
 	if n != nil {
 		parts := toParts(n.pattern)
 		params := make(map[string]string)
@@ -95,9 +112,23 @@ func (r *router) getRoute(method string, path string) (HandlerFunc, map[string]s
 				break
 			}
 		}
-		return n.handler, params
+		return n.handler, params, ns
 	}
-	return nil, nil
+	return nil, nil, nil
+}
+
+func (r *router) addMiddleware(pattern string, middlewares ...HandlerFunc) {
+	parts := toParts(pattern)
+	r.trees[middlewaresMethod].insert(parts, true, middlewares...)
+}
+
+func (r *router) getMiddlewares(path string) []HandlerFunc {
+	middlewares := make([]HandlerFunc, 0)
+	_, _, ns := r.getRoute(middlewaresMethod, path)
+	for _, n := range ns {
+		middlewares = append(middlewares, n.middlewares...)
+	}
+	return middlewares
 }
 
 func toParts(pattern string) []string {
