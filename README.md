@@ -2,6 +2,8 @@
 
 Simple web framework written in Go
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/Tarocch1/kid.svg)](https://pkg.go.dev/github.com/Tarocch1/kid)
+
 ## Installation
 
 ```sh
