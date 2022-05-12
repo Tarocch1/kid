@@ -260,7 +260,7 @@ func (c *Ctx) SendFile(path string, download bool, fs ...http.FileSystem) error 
 	} else {
 		dir, err := os.Getwd()
 		if err != nil {
-			return nil
+			return err
 		}
 		_fs = http.Dir(dir)
 	}
