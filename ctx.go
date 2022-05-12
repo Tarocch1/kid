@@ -211,7 +211,7 @@ func (c *Ctx) SendStatus(status int) error {
 
 // Stream sends binary stream.
 func (c *Ctx) Stream(data []byte) error {
-	c.SetHeader("Content-Type", "application/octet-stream")
+	c.SetHeader("Content-Type", "application/octet-stream; charset=utf-8")
 	c.writer.WriteHeader(c.status)
 	_, err := c.writer.Write(data)
 	return err
@@ -219,7 +219,7 @@ func (c *Ctx) Stream(data []byte) error {
 
 // String sends string.
 func (c *Ctx) String(format string, values ...interface{}) error {
-	c.SetHeader("Content-Type", "text/plain")
+	c.SetHeader("Content-Type", "text/plain; charset=utf-8")
 	c.writer.WriteHeader(c.status)
 	_, err := c.writer.Write([]byte(fmt.Sprintf(format, values...)))
 	return err
@@ -227,7 +227,7 @@ func (c *Ctx) String(format string, values ...interface{}) error {
 
 // Json sends json.
 func (c *Ctx) Json(data interface{}) error {
-	c.SetHeader("Content-Type", "application/json")
+	c.SetHeader("Content-Type", "application/json; charset=utf-8")
 	c.writer.WriteHeader(c.status)
 	encoder := json.NewEncoder(c.writer)
 	return encoder.Encode(data)
@@ -235,7 +235,7 @@ func (c *Ctx) Json(data interface{}) error {
 
 // Html sends html.
 func (c *Ctx) Html(html string) error {
-	c.SetHeader("Content-Type", "text/html")
+	c.SetHeader("Content-Type", "text/html; charset=utf-8")
 	c.writer.WriteHeader(c.status)
 	_, err := c.writer.Write([]byte(html))
 	return err
