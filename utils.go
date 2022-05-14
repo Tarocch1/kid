@@ -47,3 +47,10 @@ func unmarshalForm(data url.Values, out interface{}) (err error) {
 	}
 	return nil
 }
+
+func _if[T interface{}](isTrue bool, a T, b T) T {
+	if isTrue {
+		return a
+	}
+	return b
+}

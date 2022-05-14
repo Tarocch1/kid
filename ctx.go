@@ -9,7 +9,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -258,11 +257,7 @@ func (c *Ctx) SendFile(path string, download bool, fs ...http.FileSystem) error 
 	if len(fs) > 0 {
 		_fs = fs[0]
 	} else {
-		dir, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		_fs = http.Dir(dir)
+		_fs = &FileSystem{}
 	}
 
 	file, err := _fs.Open(path)
