@@ -1,0 +1,149 @@
+package basicauth
+
+import (
+	"encoding/base64"
+	"net/http"
+	"strings"
+
+	"github.com/Tarocch1/kid"
+)
+
+const (
+	HeaderAuthorization   = "Authorization"
+	HeaderWWWAuthenticate = "WWW-Authenticate"
+)
+
+type Config struct {
+	// Skip the middleware when this func return true.
+	//
+	// Optional. Default: nil
+	Skip func(*kid.Ctx) bool
+
+	// Users defines the allowed credentials
+	//
+	// Required. Default: map[string]string{}
+	Users map[string]string
+
+	// Realm is a string to define realm attribute of BasicAuth.
+	// the realm identifies the system to authenticate against
+	// and can be used by clients to save credentials
+	//
+	// Optional. Default: "Restricted".
+	Realm string
+
+	// Authorizer defines a function you can pass
+	// to check the credentials however you want.
+	// It will be called with a username and password
+	// and is expected to return true or false to indicate
+	// that the credentials were approved or not.
+	//
+	// Optional. Default: nil
+	Authorizer func(string, string) bool
+
+	// Unauthorized defines the response body for unauthorized responses.
+	// By default it will return with a 401 Unauthorized and the correct WWW-Auth header
+	//
+	// Optional. Default: nil
+	Unauthorized kid.HandlerFunc
+
+	// ContextUser is the key to store the username in Ctx
+	//
+	// Optional. Default: "username"
+	ContextUsername string
+
+	// ContextPass is the key to store the password in Ctx
+	//
+	// Optional. Default: "password"
+	ContextPassword string
+}
+
+var ConfigDefault = Config{
+	Skip:            nil,
+	Users:           map[string]string{},
+	Realm:           "Restricted",
+	Authorizer:      nil,
+	Unauthorized:    nil,
+	ContextUsername: "username",
+	ContextPassword: "password",
+}
+
+// New creates a new middleware handler
+func New(config ...Config) kid.HandlerFunc {
+	// Set default config
+	cfg := ConfigDefault
+
+	// Override config if provided
+	if len(config) > 0 {
+		cfg = config[0]
+
+		// Set default values
+		if cfg.Users == nil {
+			cfg.Users = ConfigDefault.Users
+		}
+		if cfg.Realm == "" {
+			cfg.Realm = ConfigDefault.Realm
+		}
+		if cfg.Authorizer == nil {
+			cfg.Authorizer = func(username, password string) bool {
+				userPwd, exist := cfg.Users[username]
+				return exist && password == userPwd
+			}
+		}
+		if cfg.Unauthorized == nil {
+			cfg.Unauthorized = func(c *kid.Ctx) error {
+				c.SetHeader(HeaderWWWAuthenticate, "basic")
+				return c.SendStatus(http.StatusUnauthorized)
+			}
+		}
+		if cfg.ContextUsername == "" {
+			cfg.ContextUsername = ConfigDefault.ContextUsername
+		}
+		if cfg.ContextPassword == "" {
+			cfg.ContextPassword = ConfigDefault.ContextPassword
+		}
+	}
+
+	return func(c *kid.Ctx) error {
+		// Don't execute middleware if Skip returns true
+		if cfg.Skip != nil && cfg.Skip(c) {
+			return c.Next()
+		}
+
+		// Get authorization header
+		auth := c.GetHeader(HeaderAuthorization)
+
+		// Check if the header contains content besides "basic"
+		if len(auth) <= 6 || strings.ToLower(auth[:5]) != "basic" {
+			return cfg.Unauthorized(c)
+		}
+
+		// Decode the header contents
+		raw, err := base64.StdEncoding.DecodeString(auth[6:])
+		if err != nil {
+			return cfg.Unauthorized(c)
+		}
+
+		// Get the credentials
+		creds := string(raw)
+
+		// Check if the credentials are in the correct form
+		// which is "username:password".
+		index := strings.Index(creds, ":")
+		if index == -1 {
+			return cfg.Unauthorized(c)
+		}
+
+		// Get the username and password
+		username := creds[:index]
+		password := creds[index+1:]
+
+		if cfg.Authorizer(username, password) {
+			c.Set(cfg.ContextUsername, username)
+			c.Set(cfg.ContextPassword, password)
+			return c.Next()
+		}
+
+		// Authentication failed
+		return cfg.Unauthorized(c)
+	}
+}
