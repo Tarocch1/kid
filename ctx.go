@@ -140,7 +140,7 @@ func (c *Ctx) Body() []byte {
 
 // BodyParser parsers body to any struct.
 func (c *Ctx) BodyParser(out interface{}) error {
-	ctype := c.GetHeader("Content-Type")
+	ctype := c.GetHeader(HeaderContentType)
 
 	switch {
 	case strings.HasPrefix(ctype, "application/json"):
@@ -215,13 +215,13 @@ func (c *Ctx) Redirect(target string, status ...int) error {
 	if len(status) > 0 {
 		_status = status[0]
 	}
-	c.SetHeader("Location", target)
+	c.SetHeader(HeaderLocation, target)
 	return c.SendStatus(_status)
 }
 
 // Stream sends binary stream.
 func (c *Ctx) Stream(data []byte) error {
-	c.SetHeader("Content-Type", "application/octet-stream; charset=utf-8")
+	c.SetHeader(HeaderContentType, "application/octet-stream; charset=utf-8")
 	c.writer.WriteHeader(c.status)
 	_, err := c.writer.Write(data)
 	return err
@@ -229,7 +229,7 @@ func (c *Ctx) Stream(data []byte) error {
 
 // String sends string.
 func (c *Ctx) String(format string, values ...interface{}) error {
-	c.SetHeader("Content-Type", "text/plain; charset=utf-8")
+	c.SetHeader(HeaderContentType, "text/plain; charset=utf-8")
 	c.writer.WriteHeader(c.status)
 	_, err := c.writer.Write([]byte(fmt.Sprintf(format, values...)))
 	return err
@@ -237,7 +237,7 @@ func (c *Ctx) String(format string, values ...interface{}) error {
 
 // Json sends json.
 func (c *Ctx) Json(data interface{}) error {
-	c.SetHeader("Content-Type", "application/json; charset=utf-8")
+	c.SetHeader(HeaderContentType, "application/json; charset=utf-8")
 	c.writer.WriteHeader(c.status)
 	encoder := json.NewEncoder(c.writer)
 	return encoder.Encode(data)
@@ -245,7 +245,7 @@ func (c *Ctx) Json(data interface{}) error {
 
 // Html sends html.
 func (c *Ctx) Html(html string) error {
-	c.SetHeader("Content-Type", "text/html; charset=utf-8")
+	c.SetHeader(HeaderContentType, "text/html; charset=utf-8")
 	c.writer.WriteHeader(c.status)
 	_, err := c.writer.Write([]byte(html))
 	return err
@@ -276,7 +276,7 @@ func (c *Ctx) SendFile(path string, download bool, fs ...http.FileSystem) error 
 	}
 
 	if download {
-		c.SetHeader("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", stat.Name()))
+		c.SetHeader(HeaderContentDisposition, fmt.Sprintf("attachment; filename=\"%s\"", stat.Name()))
 	}
 
 	http.ServeContent(c.writer, c.request, stat.Name(), stat.ModTime(), file)

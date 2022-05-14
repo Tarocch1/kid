@@ -33,7 +33,7 @@ type Config struct {
 	MaxAge int
 }
 
-var ConfigDefault = Config{
+var DefaultConfig = Config{
 	Skip:         nil,
 	AllowOrigins: "*",
 	AllowMethods: strings.Join([]string{
@@ -53,7 +53,7 @@ var ConfigDefault = Config{
 // New creates a new middleware handler
 func New(config ...Config) kid.HandlerFunc {
 	// Set default config
-	cfg := ConfigDefault
+	cfg := DefaultConfig
 
 	// Override config if provided
 	if len(config) > 0 {
@@ -61,10 +61,10 @@ func New(config ...Config) kid.HandlerFunc {
 
 		// Set default values
 		if cfg.AllowMethods == "" {
-			cfg.AllowMethods = ConfigDefault.AllowMethods
+			cfg.AllowMethods = DefaultConfig.AllowMethods
 		}
 		if cfg.AllowOrigins == "" {
-			cfg.AllowOrigins = ConfigDefault.AllowOrigins
+			cfg.AllowOrigins = DefaultConfig.AllowOrigins
 		}
 	}
 
@@ -87,7 +87,7 @@ func New(config ...Config) kid.HandlerFunc {
 		}
 
 		// Get origin header
-		origin := c.GetHeader("Origin")
+		origin := c.GetHeader(kid.HeaderOrigin)
 		allowOrigin := ""
 
 		// Check allowed origins
@@ -104,40 +104,40 @@ func New(config ...Config) kid.HandlerFunc {
 
 		// Simple request
 		if c.Method() != http.MethodOptions {
-			c.AddHeader("Vary", "Origin")
-			c.SetHeader("Access-Control-Allow-Origin", allowOrigin)
+			c.AddHeader(kid.HeaderVary, kid.HeaderOrigin)
+			c.SetHeader(kid.HeaderAccessControlAllowOrigin, allowOrigin)
 			if cfg.AllowCredentials {
-				c.SetHeader("Access-Control-Allow-Credentials", "true")
+				c.SetHeader(kid.HeaderAccessControlAllowCredentials, "true")
 			}
 			if exposeHeaders != "" {
-				c.SetHeader("Access-Control-Expose-Headers", exposeHeaders)
+				c.SetHeader(kid.HeaderAccessControlExposeHeaders, exposeHeaders)
 			}
 			return c.Next()
 		}
 
 		// Preflight request
-		c.AddHeader("Vary", "Origin")
-		c.AddHeader("Vary", "Access-Control-Request-Method")
-		c.AddHeader("Vary", "Access-Control-Request-Headers")
-		c.SetHeader("Access-Control-Allow-Origin", allowOrigin)
-		c.SetHeader("Access-Control-Allow-Methods", allowMethods)
+		c.AddHeader(kid.HeaderVary, kid.HeaderOrigin)
+		c.AddHeader(kid.HeaderVary, kid.HeaderAccessControlRequestMethod)
+		c.AddHeader(kid.HeaderVary, kid.HeaderAccessControlRequestHeaders)
+		c.SetHeader(kid.HeaderAccessControlAllowOrigin, allowOrigin)
+		c.SetHeader(kid.HeaderAccessControlAllowMethods, allowMethods)
 
 		// Set Allow-Credentials if set to true
 		if cfg.AllowCredentials {
-			c.SetHeader("Access-Control-Allow-Credentials", "true")
+			c.SetHeader(kid.HeaderAccessControlAllowCredentials, "true")
 		}
 		if allowHeaders != "" {
-			c.SetHeader("Access-Control-Allow-Headers", allowHeaders)
+			c.SetHeader(kid.HeaderAccessControlAllowHeaders, allowHeaders)
 		} else {
-			h := c.GetHeader("Access-Control-Request-Headers")
+			h := c.GetHeader(kid.HeaderAccessControlRequestHeaders)
 			if h != "" {
-				c.SetHeader("Access-Control-Allow-Headers", h)
+				c.SetHeader(kid.HeaderAccessControlAllowHeaders, h)
 			}
 		}
 
 		// Set MaxAge is set
 		if cfg.MaxAge > 0 {
-			c.SetHeader("Access-Control-Max-Age", maxAge)
+			c.SetHeader(kid.HeaderAccessControlMaxAge, maxAge)
 		}
 
 		// Send 204 No Content

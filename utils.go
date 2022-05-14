@@ -6,6 +6,23 @@ import (
 	"reflect"
 )
 
+func _if[T interface{}](isTrue bool, a T, b T) T {
+	if isTrue {
+		return a
+	}
+	return b
+}
+
+func sliceFilter[T interface{}](s []T, filter func(item T) bool) []T {
+	var newS []T
+	for _, x := range s {
+		if filter(x) {
+			newS = append(newS, x)
+		}
+	}
+	return newS
+}
+
 func isZero[T interface{}](value T, defaultValue ...T) bool {
 	v := reflect.ValueOf(value)
 	return v.IsZero()
@@ -46,11 +63,4 @@ func unmarshalForm(data url.Values, out interface{}) (err error) {
 		}
 	}
 	return nil
-}
-
-func _if[T interface{}](isTrue bool, a T, b T) T {
-	if isTrue {
-		return a
-	}
-	return b
 }

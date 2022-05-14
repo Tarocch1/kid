@@ -5,10 +5,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const (
-	HeaderRequestId = "X-Request-ID"
-)
-
 type Config struct {
 	// Skip the middleware when this func return true.
 	//
@@ -26,16 +22,16 @@ type Config struct {
 	Generator func() string
 }
 
-var ConfigDefault = Config{
+var DefaultConfig = Config{
 	Skip:      nil,
-	Header:    HeaderRequestId,
+	Header:    kid.HeaderRequestId,
 	Generator: uuid.NewString,
 }
 
 // New creates a new middleware handler
 func New(config ...Config) kid.HandlerFunc {
 	// Set default config
-	cfg := ConfigDefault
+	cfg := DefaultConfig
 
 	// Override config if provided
 	if len(config) > 0 {
@@ -43,10 +39,10 @@ func New(config ...Config) kid.HandlerFunc {
 
 		// Set default values
 		if cfg.Header == "" {
-			cfg.Header = ConfigDefault.Header
+			cfg.Header = DefaultConfig.Header
 		}
 		if cfg.Generator == nil {
-			cfg.Generator = ConfigDefault.Generator
+			cfg.Generator = DefaultConfig.Generator
 		}
 	}
 
@@ -59,7 +55,7 @@ func New(config ...Config) kid.HandlerFunc {
 		// Get request id from header if it exits, else generate one.
 		rid := c.GetHeader(cfg.Header, cfg.Generator())
 
-		c.Set(cfg.Header, rid)
+		c.Set(kid.CtxRequestId, rid)
 		c.SetHeader(cfg.Header, rid)
 
 		return c.Next()

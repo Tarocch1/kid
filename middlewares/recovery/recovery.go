@@ -13,14 +13,14 @@ type Config struct {
 	Skip func(*kid.Ctx) bool
 }
 
-var ConfigDefault = Config{
+var DefaultConfig = Config{
 	Skip: nil,
 }
 
 // New creates a new middleware handler
 func New(config ...Config) kid.HandlerFunc {
 	// Set default config
-	cfg := ConfigDefault
+	cfg := DefaultConfig
 
 	// Override config if provided
 	if len(config) > 0 {

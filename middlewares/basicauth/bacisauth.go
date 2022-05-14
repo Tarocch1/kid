@@ -8,11 +8,6 @@ import (
 	"github.com/Tarocch1/kid"
 )
 
-const (
-	HeaderAuthorization   = "Authorization"
-	HeaderWWWAuthenticate = "WWW-Authenticate"
-)
-
 type Config struct {
 	// Skip the middleware when this func return true.
 	//
@@ -45,32 +40,20 @@ type Config struct {
 	//
 	// Optional. Default: nil
 	Unauthorized kid.HandlerFunc
-
-	// ContextUser is the key to store the username in Ctx
-	//
-	// Optional. Default: "username"
-	ContextUsername string
-
-	// ContextPass is the key to store the password in Ctx
-	//
-	// Optional. Default: "password"
-	ContextPassword string
 }
 
-var ConfigDefault = Config{
-	Skip:            nil,
-	Users:           map[string]string{},
-	Realm:           "Restricted",
-	Authorizer:      nil,
-	Unauthorized:    nil,
-	ContextUsername: "username",
-	ContextPassword: "password",
+var DefaultConfig = Config{
+	Skip:         nil,
+	Users:        map[string]string{},
+	Realm:        "Restricted",
+	Authorizer:   nil,
+	Unauthorized: nil,
 }
 
 // New creates a new middleware handler
 func New(config ...Config) kid.HandlerFunc {
 	// Set default config
-	cfg := ConfigDefault
+	cfg := DefaultConfig
 
 	// Override config if provided
 	if len(config) > 0 {
@@ -78,10 +61,10 @@ func New(config ...Config) kid.HandlerFunc {
 
 		// Set default values
 		if cfg.Users == nil {
-			cfg.Users = ConfigDefault.Users
+			cfg.Users = DefaultConfig.Users
 		}
 		if cfg.Realm == "" {
-			cfg.Realm = ConfigDefault.Realm
+			cfg.Realm = DefaultConfig.Realm
 		}
 		if cfg.Authorizer == nil {
 			cfg.Authorizer = func(username, password string) bool {
@@ -91,15 +74,9 @@ func New(config ...Config) kid.HandlerFunc {
 		}
 		if cfg.Unauthorized == nil {
 			cfg.Unauthorized = func(c *kid.Ctx) error {
-				c.SetHeader(HeaderWWWAuthenticate, "basic")
+				c.SetHeader(kid.HeaderWWWAuthenticate, "basic")
 				return c.SendStatus(http.StatusUnauthorized)
 			}
-		}
-		if cfg.ContextUsername == "" {
-			cfg.ContextUsername = ConfigDefault.ContextUsername
-		}
-		if cfg.ContextPassword == "" {
-			cfg.ContextPassword = ConfigDefault.ContextPassword
 		}
 	}
 
@@ -110,7 +87,7 @@ func New(config ...Config) kid.HandlerFunc {
 		}
 
 		// Get authorization header
-		auth := c.GetHeader(HeaderAuthorization)
+		auth := c.GetHeader(kid.HeaderAuthorization)
 
 		// Check if the header contains content besides "basic"
 		if len(auth) <= 6 || strings.ToLower(auth[:5]) != "basic" {
@@ -138,8 +115,8 @@ func New(config ...Config) kid.HandlerFunc {
 		password := creds[index+1:]
 
 		if cfg.Authorizer(username, password) {
-			c.Set(cfg.ContextUsername, username)
-			c.Set(cfg.ContextPassword, password)
+			c.Set(kid.CtxBasicAuthUsername, username)
+			c.Set(kid.CtxBasicAuthPassword, password)
 			return c.Next()
 		}
 

@@ -2,13 +2,17 @@ package requestlogger
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/Tarocch1/kid"
 )
 
-var DefaultFormatter = func(c *kid.Ctx) string {
-	return fmt.Sprintf("%s %s -Header %v", c.Method(), c.Url().RequestURI(), c.Header())
+var DefaultFormatter = func(c *kid.Ctx) (string, map[string]interface{}) {
+	message := fmt.Sprintf("%s %s", c.Method(), c.Url().RequestURI())
+	extra := map[string]interface{}{
+		"body":   string(c.Body()),
+		"header": c.Header(),
+	}
+	return message, extra
 }
 
 type Config struct {
@@ -17,37 +21,42 @@ type Config struct {
 	// Optional. Default: nil
 	Skip func(*kid.Ctx) bool
 
-	// Use fmt.Println rather than log.Println.
+	// The module for logger.
 	//
-	// Optional. Default: false
-	UseFmt bool
+	// Optional. Default: "HTTP Request"
+	Module string
 
 	// Formatter formats ctx to log string.
 	//
 	// Optional. Default: DefaultFormatter
-	Formatter func(c *kid.Ctx) string
+	Formatter func(c *kid.Ctx) (string, map[string]interface{})
 }
 
-var ConfigDefault = Config{
+var DefaultConfig = Config{
 	Skip:      nil,
-	UseFmt:    false,
+	Module:    "HTTP Request",
 	Formatter: DefaultFormatter,
 }
 
 // New creates a new middleware handler
 func New(config ...Config) kid.HandlerFunc {
 	// Set default config
-	cfg := ConfigDefault
+	cfg := DefaultConfig
 
 	// Override config if provided
 	if len(config) > 0 {
 		cfg = config[0]
 
 		// Set default values
+		if cfg.Module == "" {
+			cfg.Module = DefaultConfig.Module
+		}
 		if cfg.Formatter == nil {
-			cfg.Formatter = ConfigDefault.Formatter
+			cfg.Formatter = DefaultConfig.Formatter
 		}
 	}
+
+	logger := kid.NewLogger(cfg.Module)
 
 	return func(c *kid.Ctx) error {
 		// Don't execute middleware if Skip returns true
@@ -55,12 +64,8 @@ func New(config ...Config) kid.HandlerFunc {
 			return c.Next()
 		}
 
-		message := cfg.Formatter(c)
-		if cfg.UseFmt {
-			fmt.Println(message)
-		} else {
-			log.Println(message)
-		}
+		message, extra := cfg.Formatter(c)
+		logger.Info(c, message, extra)
 
 		return c.Next()
 	}
