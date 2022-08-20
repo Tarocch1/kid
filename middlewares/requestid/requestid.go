@@ -2,7 +2,7 @@ package requestid
 
 import (
 	"github.com/Tarocch1/kid"
-	"github.com/google/uuid"
+	"github.com/aidarkhanov/nanoid/v2"
 )
 
 type Config struct {
@@ -18,14 +18,14 @@ type Config struct {
 
 	// Generator generates a new id.
 	//
-	// Optional. Default: uuid
-	Generator func() string
+	// Optional. Default: nanoid
+	Generator func() (string, error)
 }
 
 var DefaultConfig = Config{
 	Skip:      nil,
 	Header:    kid.HeaderRequestId,
-	Generator: uuid.NewString,
+	Generator: nanoid.New,
 }
 
 // New creates a new middleware handler
@@ -53,7 +53,14 @@ func New(config ...Config) kid.HandlerFunc {
 		}
 
 		// Get request id from header if it exits, else generate one.
-		rid := c.GetHeader(cfg.Header, cfg.Generator())
+		rid := c.GetHeader(cfg.Header)
+		if rid == "" {
+			var err error
+			rid, err = cfg.Generator()
+			if err != nil {
+				return nil
+			}
+		}
 
 		c.Set(kid.CtxRequestId, rid)
 		c.SetHeader(cfg.Header, rid)
