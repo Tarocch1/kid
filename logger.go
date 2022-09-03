@@ -76,7 +76,7 @@ func (l *Logger) Info(c *Ctx, message string, extra map[string]interface{}) {
 }
 
 func (l *Logger) Error(c *Ctx, message string, extra map[string]interface{}, err error) {
-	l.log(l.FormatMessage(c, LoggerLevelInfo, message, extra, err))
+	l.log(l.FormatMessage(c, LoggerLevelError, message, extra, err))
 }
 
 var logger = NewLogger("Logger")
