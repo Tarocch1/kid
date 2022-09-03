@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -28,8 +28,8 @@ type Ctx struct {
 }
 
 func newCtx(w http.ResponseWriter, r *http.Request) *Ctx {
-	rawBody, _ := ioutil.ReadAll(r.Body)
-	r.Body = ioutil.NopCloser(bytes.NewReader(rawBody))
+	rawBody, _ := io.ReadAll(r.Body)
+	r.Body = io.NopCloser(bytes.NewReader(rawBody))
 
 	context := &Ctx{
 		writer:  w,
