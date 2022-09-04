@@ -188,7 +188,13 @@ func (c *Ctx) BodyParser(out interface{}) error {
 	}
 
 	if parsed {
-		return validate.Struct(out)
+		err := validate.Struct(out)
+		if err != nil {
+			if _, ok := err.(*validator.InvalidValidationError); ok {
+				return nil
+			}
+			return err
+		}
 	}
 
 	return NewError(http.StatusUnprocessableEntity, "422 Unprocessable Entity", nil)
