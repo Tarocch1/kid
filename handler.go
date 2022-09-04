@@ -22,6 +22,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return NewError(
 				http.StatusNotFound,
 				fmt.Sprintf("404 Not Found: %s %s", c.Method(), c.Url().RequestURI()),
+				nil,
 			)
 		}
 	})

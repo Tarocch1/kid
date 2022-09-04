@@ -42,7 +42,7 @@ func (fs *FileSystem) Open(path string) (http.File, error) {
 	}
 
 	if !fs.EnableOuter && containsDotDot(path) {
-		return nil, NewError(http.StatusBadRequest, "400 Bad Request: Invalid path")
+		return nil, NewError(http.StatusBadRequest, "400 Bad Request: Invalid path", nil)
 	}
 
 	var target string
