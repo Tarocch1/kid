@@ -12,7 +12,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/go-playground/validator/v10"
 )
+
+var validate = validator.New()
 
 type Ctx struct {
 	writer  http.ResponseWriter
@@ -142,9 +146,15 @@ func (c *Ctx) Body() []byte {
 func (c *Ctx) BodyParser(out interface{}) error {
 	ctype := c.GetHeader(HeaderContentType)
 
+	parsed := false
+
 	switch {
 	case strings.HasPrefix(ctype, "application/json"):
-		return json.Unmarshal(c.Body(), out)
+		err := json.Unmarshal(c.Body(), out)
+		if err != nil {
+			return err
+		}
+		parsed = true
 	case strings.HasPrefix(ctype, "application/x-www-form-urlencoded") ||
 		c.Method() == "HEAD" ||
 		c.Method() == "GET" ||
@@ -153,16 +163,32 @@ func (c *Ctx) BodyParser(out interface{}) error {
 		if err != nil {
 			return err
 		}
-		return unmarshalForm(c.request.Form, out)
+		err = unmarshalForm(c.request.Form, out)
+		if err != nil {
+			return err
+		}
+		parsed = true
 	case strings.HasPrefix(ctype, "multipart/form-data"):
 		err := c.request.ParseMultipartForm(32 << 20)
 		if err != nil {
 			return err
 		}
-		return unmarshalForm(c.request.MultipartForm.Value, out)
+		err = unmarshalForm(c.request.MultipartForm.Value, out)
+		if err != nil {
+			return err
+		}
+		parsed = true
 	case strings.HasPrefix(ctype, "text/xml") ||
 		strings.HasPrefix(ctype, "application/xml"):
-		return xml.Unmarshal(c.Body(), out)
+		err := xml.Unmarshal(c.Body(), out)
+		if err != nil {
+			return err
+		}
+		parsed = true
+	}
+
+	if parsed {
+		return validate.Struct(out)
 	}
 
 	return NewError(http.StatusUnprocessableEntity, "422 Unprocessable Entity", nil)

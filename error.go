@@ -15,8 +15,8 @@ var DefaultErrorHandler ErrorHandlerFunc = func(c *Ctx, err error) error {
 	message := fmt.Sprintf("%s %s", c.Method(), c.Url().RequestURI())
 	if e, ok := err.(*Error); ok {
 		errorLogger.Error(c, message, map[string]interface{}{
-			"data": err.(*Error).Data,
-		}, err)
+			"data": e.Data,
+		}, e)
 		return c.Status(e.Status).String(e.Message)
 	} else {
 		errorLogger.Error(c, message, nil, err)
